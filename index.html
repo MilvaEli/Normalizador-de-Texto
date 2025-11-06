@@ -176,56 +176,49 @@
 function normalizarLineaFiliacion(linea){
   if(!linea || !linea.trim()) return '';
 
-  // Limpieza mínima y extracción de "Fil:"
   let txt = linea.trim();
   if(!/^Fil:\s*/i.test(txt)) txt = 'Fil: ' + txt.replace(/^Fil\s*:\s*/i,'');
   txt = txt.replace(/^Fil:\s*/i,'');
 
-  // Captura "Apellido, Nombre"
+  // "Apellido, Nombre"
   const m = txt.match(/^\s*([^.;]+?),\s*([^.;]+?)(?:\.|\s|$)/);
   if(!m) return { error:'Falta “Apellido, Nombre” (con coma).', salida:null };
 
   const apellido = titleCaseSiglas(m[1]);
   const nombre   = titleCaseSiglas(m[2]);
 
-  // Resto: instituciones (separadas por ".") + "; País"
+  // resto = instituciones + "; País"
   let resto = txt.slice(m[0].length).trim();
-
-  // País: después del ÚLTIMO ';'
   const idx = resto.lastIndexOf(';');
   if (idx === -1) return { error:'Falta “; País”.', salida:null };
 
-  let institucionesRaw = resto.slice(0, idx).trim();           // todo antes del ";"
-  let pais             = resto.slice(idx+1).trim().replace(/\.*$/,'');
+  const institucionesRaw = resto.slice(0, idx).trim();
+  const pais             = resto.slice(idx+1).trim().replace(/\.*$/,'');
 
-  // Partir en todas las dependencias separadas por punto
-  // (filtramos vacíos por si hay puntos dobles o espacios)
-  const instituciones = institucionesRaw
-      .split('.')
-      .map(s => s.trim())
-      .filter(Boolean);
-
+  // TODAS las dependencias separadas por punto
+  const instituciones = institucionesRaw.split('.').map(s => s.trim()).filter(Boolean);
   if (instituciones.length < 1) {
     return { error:'Debe haber al menos una institución antes del “; País”.', salida:null };
   }
 
-  // Normalizar “Title Case”/siglas en CADA dependencia
   const instOut = instituciones.map(s => titleCaseSiglas(s)).join('. ');
-
-  // Ensamblado final:
-  // Nota: NO ponemos punto al final del bloque de instituciones antes de ";"
   const outPais = titleCaseSiglas(pais);
+
   const salida  = `Fil: ${apellido}, ${nombre}. ${instOut}; ${outPais}.`
     .replace(/\s+/g,' ')
     .replace(/\s+\./g,'.')
     .trim();
 
-  // Validación flexible (acepta múltiples dependencias con puntos)
+  // Validación: si no matchea, igual devolvemos la salida
   const rx = /^Fil:\s*[^,]+,\s*[^.]+\.\s*[^;]+;\s*[^.]+\.$/;
   if (!rx.test(salida)) {
-    // Si no pasa, igual devolvemos la salida construida y avisamos
     return { error:null, salida };
- }
+  }
+
+  // ← ESTE return faltaba
+  return { error:null, salida };
+} 
+
     function normalizarFiliacionDesdeEntrada(){
       const src=document.getElementById('entrada').value;
       const lineas=src.split(/\r?\n/);
