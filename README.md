@@ -1,4 +1,4 @@
-# 🧩 Normalizador RIDUNaM
+# Normalizador RIDUNaM
 
 **Normalizador de Texto** es una herramienta web desarrollada en el marco del **Repositorio Institucional Digital de la Universidad Nacional de Misiones (RIDUNaM)**, orientada a la **limpieza y normalización de metadatos** antes de su ingestión en la plataforma **DSpace**.
 
