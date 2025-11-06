@@ -6,7 +6,7 @@ Permite procesar y uniformar cadenas de texto (autores, títulos, identificadore
 
 ---
 
-## 🚀 Funcionalidades principales
+## Funcionalidades principales
 
 - Conversión de texto a minúsculas o formato capitalizado.
 - Eliminación de espacios extra, saltos de línea o caracteres no válidos.
@@ -16,7 +16,7 @@ Permite procesar y uniformar cadenas de texto (autores, títulos, identificadore
 
 ---
 
-## 🧠 Contexto y objetivos
+## Contexto y objetivos
 
 Esta herramienta fue desarrollada como parte del proceso de fortalecimiento del **RIDUNaM**, en el marco del **Proyecto SF19** y del **Plan Estratégico UNaMTec**, con el propósito de:
 
@@ -26,7 +26,7 @@ Esta herramienta fue desarrollada como parte del proceso de fortalecimiento del 
 
 ---
 
-## 🧩 Cómo usarla
+## Cómo usarla
 
 1. Abrí la aplicación desde el siguiente enlace:  
    🔗 [Normalizador RIDUNaM en GitHub Pages](https://milvaeli.github.io/Normalizador-de-Texto/)
@@ -37,7 +37,7 @@ Esta herramienta fue desarrollada como parte del proceso de fortalecimiento del 
 
 ---
 
-## 🏛️ Créditos
+## Créditos
 
 - **Autora y desarrollo:** Milva Cantoni  
   Departamento de Sistemas del Rectorado – Universidad Nacional de Misiones (UNaM)  
@@ -47,7 +47,7 @@ Esta herramienta fue desarrollada como parte del proceso de fortalecimiento del 
 
 ---
 
-## 🧩 Licencia
+## Licencia
 
 Este proyecto está licenciado bajo la [GNU General Public License v3.0](LICENSE).  
 Usted es libre de usar, modificar y distribuir este software bajo las condiciones de la licencia, siempre conservando la autoría y la misma licencia en obras derivadas.
@@ -56,7 +56,7 @@ Usted es libre de usar, modificar y distribuir este software bajo las condicione
 
 ---
 
-## 📬 Contacto
+## Contacto
 
 📧 **ridunam@unam.edu.ar**  
 🌐 [https://rid.unam.edu.ar](https://rid.unam.edu.ar)
