@@ -224,11 +224,8 @@ function normalizarLineaFiliacion(linea){
   const rx = /^Fil:\s*[^,]+,\s*[^.]+\.\s*[^;]+;\s*[^.]+\.$/;
   if (!rx.test(salida)) {
     // Si no pasa, igual devolvemos la salida construida y avisamos
-    return { error:'Estructura validada con formato extendido (múltiples dependencias).', salida };
-  }
-  return { error:null, salida };
-
-    }
+    return { error:null, salida };
+ }
     function normalizarFiliacionDesdeEntrada(){
       const src=document.getElementById('entrada').value;
       const lineas=src.split(/\r?\n/);
