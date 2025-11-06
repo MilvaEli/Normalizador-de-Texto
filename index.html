@@ -7,70 +7,56 @@
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet" />
   <style>
     :root{
-      --azul-ridunam:#aaebf7;
-      --azul-ridunam-hover:#8eddea;
-      --azul-ridunam-oscuro:#5ec7d7;
-      --gris-fondo:#fff5f5;
-      --borde-suave:#e2dfdf;
-      --texto-principal:#141313;
-      --bg-card:#ffffff;
-    }
-    *{box-sizing:border-box}
-    body{
-      font-family:'Open Sans',system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
-      background:var(--gris-fondo); margin:0; padding:0 1rem 4rem; color:var(--texto-principal);
-    }
-    header{
-      background:var(--azul-ridunam); color:#00040e; padding:1rem 1.5rem;
-      display:flex; align-items:center; justify-content:space-between; border-bottom:3px solid rgba(0,0,0,.08);
-    }
-    .brand-logo img{height:120px; width:auto; object-fit:contain; display:block}
-    .brand-text h1{font-size:1.1rem; font-weight:600; margin:0}
-    .brand-text p{font-size:.8rem; margin:0; opacity:.9}
+  --azul-ridunam: #65aaf8;
+  --bg-intensidad: .6;       
+  --doodles-opacidad: .18;   
+  --doodles-trazo: var(--azul-ridunam);
+}
 
-    main{
-      max-width:900px; background:var(--bg-card); margin:2rem auto 0; padding:2rem;
-      border-radius:16px; box-shadow:0 16px 40px rgba(0,0,0,.07); border:1px solid rgba(0,0,0,.05);
-    }
-    .panel{margin-bottom:1.2rem}
-    .panel label{font-size:.9rem; font-weight:600; display:block; margin-bottom:.5rem; color:#333}
-    textarea{
-      width:100%; min-height:160px; font-size:.95rem; line-height:1.45; padding:1rem; border-radius:8px;
-      border:1px solid var(--borde-suave); resize:vertical; font-family:'Open Sans',monospace; background:#fcf9f9; color:#000;
-    }
+body{
+  background:
+    radial-gradient(1200px 800px at 10% 0%, rgba(101,170,248, var(--bg-intensidad)) 0%, rgba(101,170,248,0) 60%),
+    radial-gradient(1000px 700px at 90% 20%, rgba(180,220,255, var(--bg-intensidad)) 0%, rgba(101,170,248,0) 60%),
+    radial-gradient(900px 600px at 40% 100%, rgba(230,242,255, .8) 0%, rgba(101,170,248,0) 70%),
+    #f7faff;
+}
 
-    .actions{display:flex; flex-wrap:wrap; gap:.5rem; margin:1rem 0 1rem}
-    button{
-      border:none; border-radius:8px; padding:.6rem .9rem; font-size:.9rem; font-weight:600; cursor:pointer;
-      line-height:1.2; min-width:130px; box-shadow:0 2px 4px rgba(0,0,0,.08);
-      transition:background-color .2s, box-shadow .2s, color .2s, opacity .2s;
-    }
-    button:active{box-shadow:0 1px 2px rgba(0,0,0,.2); transform:translateY(1px)}
-    button.primary{background:var(--azul-ridunam-oscuro); color:#041016}
-    button.primary:hover{background:var(--azul-ridunam-hover)}
-    button.secondary{background:#ececec; color:#030303}
-    button.secondary:hover{background:#050505; color:#fff}
-    button[disabled]{opacity:.45; cursor:not-allowed}
-
-    .help{font-size:.9rem; color:#555; margin:.25rem 0 .75rem}
-    #avisos{margin-top:.5rem; font-size:.92rem}
-
-    .toast{
-      position:fixed; right:1rem; top:1rem; min-width:240px; max-width:320px;
-      background:#222; color:#fff; border-radius:8px; padding:.8rem 1rem; font-size:.9rem; line-height:1.4;
-      box-shadow:0 12px 32px rgba(0,0,0,.4); opacity:0; visibility:hidden; z-index:9999;
-      transition:opacity .3s ease, visibility .3s ease;
-    }
-    .toast.show{opacity:1; visibility:visible}
-
-    @media (max-width:600px){
-      header{flex-direction:column; align-items:flex-start; gap:1rem}
-      button{min-width:unset; flex:1 1 calc(50% - .5rem)}
-      .actions{gap:.5rem}
-    }
+.bg-doodles{
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  opacity: var(--doodles-opacidad);
+  pointer-events: none;
+}
   </style>
 </head>
 <body>
+  <svg class="bg-doodles" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <pattern id="pat-libros" width="140" height="140" patternUnits="userSpaceOnUse">
+      <rect width="140" height="140" fill="transparent"/>
+      <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="18" y="20" width="34" height="22" rx="2"/>
+        <path d="M18 26 h34"/>
+        <rect x="70" y="16" width="36" height="8" rx="2"/>
+        <rect x="72" y="26" width="36" height="8" rx="2"/>
+        <rect x="74" y="36" width="36" height="8" rx="2"/>
+        <path d="M20 82 q18 -10 36 0 q18 -10 36 0 v20 q-18 -10 -36 0 q-18 -10 -36 0 z"/>
+        <path d="M38 76 v26"/>
+      </g>
+      <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+         transform="translate(80,90) rotate(-18)">
+        <rect x="0" y="0" width="32" height="20" rx="2"/>
+        <path d="M0 6 h32"/>
+        <path d="M36 4 q14 8 28 0 v18 q-14 -8 -28 0 z"/>
+        <path d="M50 2 v22"/>
+      </g>
+    </pattern>
+  </defs>
+
+  <rect width="100%" height="100%" fill="url(#pat-libros)" style="color: var(--doodles-trazo);" />
+</svg>
+
   <header>
     <div class="brand-text">
       <h1>Normalizador de metadatos · RIDUNaM</h1>
