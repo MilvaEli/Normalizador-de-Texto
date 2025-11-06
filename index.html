@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>RIDUNaM · Normalizador de metadatos</title>
+  <link rel="icon" href="favicon.ico" />
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --azul-ridunam:#aaebf7;
+      --azul-ridunam-hover:#8eddea;
+      --azul-ridunam-oscuro:#5ec7d7;
+      --gris-fondo:#fff5f5;
+      --borde-suave:#e2dfdf;
+      --texto-principal:#141313;
+      --bg-card:#ffffff;
+    }
+    *{box-sizing:border-box}
+    body{
+      font-family:'Open Sans',system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+      background:var(--gris-fondo); margin:0; padding:0 1rem 4rem; color:var(--texto-principal);
+    }
+    header{
+      background:var(--azul-ridunam); color:#00040e; padding:1rem 1.5rem;
+      display:flex; align-items:center; justify-content:space-between; border-bottom:3px solid rgba(0,0,0,.08);
+    }
+    .brand-logo img{height:120px; width:auto; object-fit:contain; display:block}
+    .brand-text h1{font-size:1.1rem; font-weight:600; margin:0}
+    .brand-text p{font-size:.8rem; margin:0; opacity:.9}
+
+    main{
+      max-width:900px; background:var(--bg-card); margin:2rem auto 0; padding:2rem;
+      border-radius:16px; box-shadow:0 16px 40px rgba(0,0,0,.07); border:1px solid rgba(0,0,0,.05);
+    }
+    .panel{margin-bottom:1.2rem}
+    .panel label{font-size:.9rem; font-weight:600; display:block; margin-bottom:.5rem; color:#333}
+    textarea{
+      width:100%; min-height:160px; font-size:.95rem; line-height:1.45; padding:1rem; border-radius:8px;
+      border:1px solid var(--borde-suave); resize:vertical; font-family:'Open Sans',monospace; background:#fcf9f9; color:#000;
+    }
+
+    .actions{display:flex; flex-wrap:wrap; gap:.5rem; margin:1rem 0 1rem}
+    button{
+      border:none; border-radius:8px; padding:.6rem .9rem; font-size:.9rem; font-weight:600; cursor:pointer;
+      line-height:1.2; min-width:130px; box-shadow:0 2px 4px rgba(0,0,0,.08);
+      transition:background-color .2s, box-shadow .2s, color .2s, opacity .2s;
+    }
+    button:active{box-shadow:0 1px 2px rgba(0,0,0,.2); transform:translateY(1px)}
+    button.primary{background:var(--azul-ridunam-oscuro); color:#041016}
+    button.primary:hover{background:var(--azul-ridunam-hover)}
+    button.secondary{background:#ececec; color:#030303}
+    button.secondary:hover{background:#050505; color:#fff}
+    button[disabled]{opacity:.45; cursor:not-allowed}
+
+    .help{font-size:.9rem; color:#555; margin:.25rem 0 .75rem}
+    #avisos{margin-top:.5rem; font-size:.92rem}
+
+    .toast{
+      position:fixed; right:1rem; top:1rem; min-width:240px; max-width:320px;
+      background:#222; color:#fff; border-radius:8px; padding:.8rem 1rem; font-size:.9rem; line-height:1.4;
+      box-shadow:0 12px 32px rgba(0,0,0,.4); opacity:0; visibility:hidden; z-index:9999;
+      transition:opacity .3s ease, visibility .3s ease;
+    }
+    .toast.show{opacity:1; visibility:visible}
+
+    @media (max-width:600px){
+      header{flex-direction:column; align-items:flex-start; gap:1rem}
+      button{min-width:unset; flex:1 1 calc(50% - .5rem)}
+      .actions{gap:.5rem}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand-text">
+      <h1>Normalizador de metadatos · RIDUNaM</h1>
+      <p>Repositorio Institucional Digital · Universidad Nacional de Misiones</p>
+    </div>
+    <div class="brand-logo"><img src="ridunam_logo.png" alt="Logo RIDUNaM"></div>
+  </header>
+
+<main>
+  <section class="panel">
+    <label for="entrada">Acá podés pegar el texto que quieras ordenar o limpiar: nombres de autoras/es, filiaciones, resúmenes, títulos… lo que necesites dejar prolijo antes de cargarlo al RIDUNaM 💙</label>
+    <textarea id="entrada" placeholder="Pegá aquí el contenido a procesar..."></textarea>
+    <div class="help">Solo habrá un cuadro de entrada y uno de salida. Elegí una acción abajo.</div>
+  </section>
+
+
+    <!-- Botones de acciones (todas operan sobre #entrada → #salida) -->
+    <section class="actions">
+      <button class="primary" onclick="normalizarTexto()">Normalizar texto</button>
+      <button class="secondary" onclick="invertirAutores()">Apellido, Nombre</button>
+      <button class="secondary" onclick="normalizarFiliacionDesdeEntrada()">Filiación</button>
+      <button class="secondary" onclick="convertirMinusculas()">a minúsculas</button>
+      <button class="secondary" onclick="convertirMayusculas()">A MAYÚSCULAS</button>
+      <button id="btnCopiar" class="secondary" onclick="copiarSalida()">📋 Copiar</button>
+      <button id="btnDescargar" class="secondary" onclick="descargarSalida()">⬇️ Descargar</button>
+    </section>
+
+    <div id="avisos"></div>
+
+    <section class="panel">
+     <label for="salida" style="display:flex;align-items:center;gap:.75rem;">
+     Resultado
+     <span style="font-weight:normal;font-size:.9rem;display:inline-flex;align-items:center;gap:.35rem;">
+      <input id="lockResultado" type="checkbox" onchange="toggleLockResultado()" />
+      Bloquear edición
+     </span>
+     </label>
+     <textarea id="salida" placeholder="Acá vas a ver el resultado procesado..."></textarea>
+    </section>
+
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // ————— util UI —————
+    function toast(msg){
+      const t=document.getElementById('toast');
+      t.textContent=msg; t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'), 2200);
+    }
+    function setAviso(html){ document.getElementById('avisos').innerHTML = html || ''; }
+    function setSalida(txt){ document.getElementById('salida').value = txt; }
+
+    // ————— acciones base (entrada → salida) —————
+    function normalizarTexto(){
+      let texto=document.getElementById('entrada').value;
+      texto = texto.replace(/\s+/g,' ').trim();                        // espacios
+      texto = texto.replace(/\n{2,}/g,'\n');                           // saltos
+      setSalida(texto); setAviso(''); toast('Texto normalizado');
+      habilitarCopiarDescargar(true);
+    }
+
+    function invertirAutores(){
+      let texto=document.getElementById('entrada').value;
+      const autores = texto.split(/\n|;/).map(n=>{
+        n=n.trim(); if(!n) return '';
+        const p=n.split(/\s+/); if(p.length<2) return n;
+        const ape=p.pop(), nom=p.join(' ');
+        return `${ape}, ${nom}`;
+      });
+      setSalida(autores.join('\n')); setAviso(''); toast('Autores invertidos');
+      habilitarCopiarDescargar(true);
+    }
+    function toggleLockResultado() {
+      const locked = document.getElementById('lockResultado').checked;
+      const t = document.getElementById('salida');
+      t.readOnly = locked;
+    }
+
+    function convertirMinusculas(){
+      setSalida(document.getElementById('entrada').value.toLowerCase());
+      setAviso(''); toast('a minúsculas'); habilitarCopiarDescargar(true);
+    }
+    function convertirMayusculas(){
+      setSalida(document.getElementById('entrada').value.toUpperCase());
+      setAviso(''); toast('A MAYÚSCULAS'); habilitarCopiarDescargar(true);
+    }
+
+    // ————— Normalizador de Filiación SNRD (usa entrada → salida) —————
+    const PARTICULAS=new Set(['de','da','do','das','dos','del','la','las','los','y']);
+    function smartCaseToken(tok,isStart=false){
+      const clean=tok.replace(/[.,;:]/g,'');
+      if (clean.length>=3 && clean===clean.toUpperCase() && /[A-ZÁÉÍÓÚÜÑ]/.test(clean)) return tok.toUpperCase();
+      if (!isStart && PARTICULAS.has(clean.toLowerCase())) return tok.toLowerCase();
+      return tok.charAt(0).toUpperCase()+tok.slice(1).toLowerCase();
+    }
+    function titleCaseSiglas(s){
+      const tk=s.trim().replace(/\s+/g,' ').split(' ');
+      return tk.map((t,i)=>smartCaseToken(t,i===0)).join(' ');
+    }
+
+function normalizarLineaFiliacion(linea){
+  if(!linea || !linea.trim()) return '';
+
+  // Limpieza mínima y extracción de "Fil:"
+  let txt = linea.trim();
+  if(!/^Fil:\s*/i.test(txt)) txt = 'Fil: ' + txt.replace(/^Fil\s*:\s*/i,'');
+  txt = txt.replace(/^Fil:\s*/i,'');
+
+  // Captura "Apellido, Nombre"
+  const m = txt.match(/^\s*([^.;]+?),\s*([^.;]+?)(?:\.|\s|$)/);
+  if(!m) return { error:'Falta “Apellido, Nombre” (con coma).', salida:null };
+
+  const apellido = titleCaseSiglas(m[1]);
+  const nombre   = titleCaseSiglas(m[2]);
+
+  // Resto: instituciones (separadas por ".") + "; País"
+  let resto = txt.slice(m[0].length).trim();
+
+  // País: después del ÚLTIMO ';'
+  const idx = resto.lastIndexOf(';');
+  if (idx === -1) return { error:'Falta “; País”.', salida:null };
+
+  let institucionesRaw = resto.slice(0, idx).trim();           // todo antes del ";"
+  let pais             = resto.slice(idx+1).trim().replace(/\.*$/,'');
+
+  // Partir en todas las dependencias separadas por punto
+  // (filtramos vacíos por si hay puntos dobles o espacios)
+  const instituciones = institucionesRaw
+      .split('.')
+      .map(s => s.trim())
+      .filter(Boolean);
+
+  if (instituciones.length < 1) {
+    return { error:'Debe haber al menos una institución antes del “; País”.', salida:null };
+  }
+
+  // Normalizar “Title Case”/siglas en CADA dependencia
+  const instOut = instituciones.map(s => titleCaseSiglas(s)).join('. ');
+
+  // Ensamblado final:
+  // Nota: NO ponemos punto al final del bloque de instituciones antes de ";"
+  const outPais = titleCaseSiglas(pais);
+  const salida  = `Fil: ${apellido}, ${nombre}. ${instOut}; ${outPais}.`
+    .replace(/\s+/g,' ')
+    .replace(/\s+\./g,'.')
+    .trim();
+
+  // Validación flexible (acepta múltiples dependencias con puntos)
+  const rx = /^Fil:\s*[^,]+,\s*[^.]+\.\s*[^;]+;\s*[^.]+\.$/;
+  if (!rx.test(salida)) {
+    // Si no pasa, igual devolvemos la salida construida y avisamos
+    return { error:null, salida };
+ }
+    function normalizarFiliacionDesdeEntrada(){
+      const src=document.getElementById('entrada').value;
+      const lineas=src.split(/\r?\n/);
+      const out=[], errs=[];
+      lineas.forEach((l,i)=>{
+        if(!l.trim()) return;
+        const r=normalizarLineaFiliacion(l);
+        if(r.error) errs.push(`Línea ${i+1}: ${r.error}`);
+        if(r.salida) out.push(r.salida);
+      });
+      setSalida(out.join('\n'));
+      setAviso(errs.length ? ('⚠️ '+errs.join('<br>')) : '✅ Filiaciones válidas');
+      toast(errs.length ? 'Revisar avisos' : 'Filiación normalizada');
+
+      // Política RIDUNaM: deshabilitar copia/descarga unos segundos para forzar lectura.
+      habilitarCopiarDescargar(false);
+      setTimeout(()=>habilitarCopiarDescargar(true), 10000); // 10s
+    }
+
+    // ————— Copiar / Descargar —————
+    async function copiarSalida(){
+      const t=document.getElementById('salida').value;
+      try{
+        if(navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(t); }
+        else{ const el=document.getElementById('salida'); el.select(); document.execCommand('copy'); }
+        toast('Resultado copiado');
+      }catch(e){ toast('No se pudo copiar'); }
+    }
+    function descargarSalida(){
+      const t=document.getElementById('salida').value;
+      const blob=new Blob([t],{type:'text/plain'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+      a.download='metadatos_normalizados.txt'; a.click(); toast('Archivo descargado');
+    }
+    function habilitarCopiarDescargar(enable){
+      document.getElementById('btnCopiar').disabled=!enable;
+      document.getElementById('btnDescargar').disabled=!enable;
+    }
+
+  </script>
+</body>
+</html>
+
