@@ -172,35 +172,62 @@
       const tk=s.trim().replace(/\s+/g,' ').split(' ');
       return tk.map((t,i)=>smartCaseToken(t,i===0)).join(' ');
     }
-    function normalizarLineaFiliacion(linea){
-      if(!linea.trim()) return '';
-      let txt=linea.trim();
-      if(!/^Fil:\s*/i.test(txt)) txt='Fil: '+txt.replace(/^Fil\s*:\s*/i,'');
-      txt=txt.replace(/^Fil:\s*/i,'');
-      const m=txt.match(/^\s*([^.;]+?),\s*([^.;]+?)(?:\.|\s|$)/);
-      if(!m) return {error:'Falta “Apellido, Nombre” (con coma).', salida:null};
-      const apellido=titleCaseSiglas(m[1]), nombre=titleCaseSiglas(m[2]);
-      let resto=txt.slice(m[0].length).trim();
-      let pais=null; const idx=resto.lastIndexOf(';');
-      if(idx!==-1){ pais=resto.slice(idx+1).trim().replace(/\.*$/,''); resto=resto.slice(0,idx).trim(); }
-      const inst=resto.split('.').map(s=>s.trim()).filter(Boolean);
-      if (inst.length < 2) {
-       return { error: 'Debe haber al menos un punto (.) para separar instituciones.', salida: null };
-      }
 
-      const instMayor=inst[0]||'', instMenor=inst[1]||'';
-      if(!instMayor) return {error:'Falta “Institución mayor”.', salida:null};
-      if(!pais)      return {error:'Falta “; País”.', salida:null};
-      const outMayor=titleCaseSiglas(instMayor);
-      const outMenor=instMenor ? titleCaseSiglas(instMenor) : '';
-      const outPais =titleCaseSiglas(pais);
-      let salida=`Fil: ${apellido}, ${nombre}. ${outMayor}.`;
-      if(outMenor) salida+=` ${outMenor};`; else salida=salida.replace(/\.\s*$/,';');
-      salida+=` ${outPais}.`;
-      salida=salida.replace(/\s+/g,' ').replace(/\s+\./g,'.').replace(/;\s*/,'; ').trim();
-      const rx=/^Fil:\s*[^,]+,\s*[^.]+\.\s*[^.]+\.?(?:\s+[^;]+;)?\s+[^.]+\.?$/;
-      if(!rx.test(salida)) return {error:'Estructura SNRD no reconocida (revisar puntos/“; País”).', salida};
-      return {error:null, salida};
+function normalizarLineaFiliacion(linea){
+  if(!linea || !linea.trim()) return '';
+
+  // Limpieza mínima y extracción de "Fil:"
+  let txt = linea.trim();
+  if(!/^Fil:\s*/i.test(txt)) txt = 'Fil: ' + txt.replace(/^Fil\s*:\s*/i,'');
+  txt = txt.replace(/^Fil:\s*/i,'');
+
+  // Captura "Apellido, Nombre"
+  const m = txt.match(/^\s*([^.;]+?),\s*([^.;]+?)(?:\.|\s|$)/);
+  if(!m) return { error:'Falta “Apellido, Nombre” (con coma).', salida:null };
+
+  const apellido = titleCaseSiglas(m[1]);
+  const nombre   = titleCaseSiglas(m[2]);
+
+  // Resto: instituciones (separadas por ".") + "; País"
+  let resto = txt.slice(m[0].length).trim();
+
+  // País: después del ÚLTIMO ';'
+  const idx = resto.lastIndexOf(';');
+  if (idx === -1) return { error:'Falta “; País”.', salida:null };
+
+  let institucionesRaw = resto.slice(0, idx).trim();           // todo antes del ";"
+  let pais             = resto.slice(idx+1).trim().replace(/\.*$/,'');
+
+  // Partir en todas las dependencias separadas por punto
+  // (filtramos vacíos por si hay puntos dobles o espacios)
+  const instituciones = institucionesRaw
+      .split('.')
+      .map(s => s.trim())
+      .filter(Boolean);
+
+  if (instituciones.length < 1) {
+    return { error:'Debe haber al menos una institución antes del “; País”.', salida:null };
+  }
+
+  // Normalizar “Title Case”/siglas en CADA dependencia
+  const instOut = instituciones.map(s => titleCaseSiglas(s)).join('. ');
+
+  // Ensamblado final:
+  // Nota: NO ponemos punto al final del bloque de instituciones antes de ";"
+  const outPais = titleCaseSiglas(pais);
+  const salida  = `Fil: ${apellido}, ${nombre}. ${instOut}; ${outPais}.`
+    .replace(/\s+/g,' ')
+    .replace(/\s+\./g,'.')
+    .trim();
+
+  // Validación flexible (acepta múltiples dependencias con puntos)
+  const rx = /^Fil:\s*[^,]+,\s*[^.]+\.\s*[^;]+;\s*[^.]+\.$/;
+  if (!rx.test(salida)) {
+    // Si no pasa, igual devolvemos la salida construida y avisamos
+    return { error:'Estructura validada con formato extendido (múltiples dependencias).', salida };
+  }
+  return { error:null, salida };
+
     }
     function normalizarFiliacionDesdeEntrada(){
       const src=document.getElementById('entrada').value;
