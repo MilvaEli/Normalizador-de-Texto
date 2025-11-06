@@ -4,8 +4,6 @@
 
 Permite procesar y uniformar cadenas de texto (autores, títulos, identificadores, etc.) aplicando criterios de normalización y buenas prácticas de curación de datos. Su uso contribuye a mejorar la coherencia y visibilidad de los registros en los repositorios institucionales interoperables con el **Sistema Nacional de Repositorios Digitales (SNRD)**.
 
----
-
 ## Funcionalidades principales
 
 - Conversión de texto a minúsculas o formato capitalizado.
@@ -14,8 +12,6 @@ Permite procesar y uniformar cadenas de texto (autores, títulos, identificadore
 - Integración opcional con control de autores y herramientas de limpieza de metadatos.
 - Bloqueo/desbloqueo de edición en el resultado para revisión segura.
 
----
-
 ## Contexto y objetivos
 
 Esta herramienta fue desarrollada como parte del proceso de fortalecimiento del **RIDUNaM**, en el marco del **Proyecto SF19** y del **Plan Estratégico UNaMTec**, con el propósito de:
@@ -23,8 +19,6 @@ Esta herramienta fue desarrollada como parte del proceso de fortalecimiento del 
 - Promover la calidad descriptiva en los metadatos institucionales.  
 - Facilitar la formación de equipos editoriales y técnicos en buenas prácticas de curación.  
 - Fomentar la **ciencia abierta**, el **acceso abierto** y la **preservación digital sostenible**.
-
----
 
 ## Cómo usarla
 
@@ -35,8 +29,6 @@ Esta herramienta fue desarrollada como parte del proceso de fortalecimiento del 
 3. Presioná el botón **“Normalizar texto”**.  
 4. Copiá o exportá el resultado listo para ingresar a DSpace o a tu planilla de metadatos.
 
----
-
 ## Créditos
 
 - **Autora y desarrollo:** Milva Cantoni  
@@ -45,8 +37,6 @@ Esta herramienta fue desarrollada como parte del proceso de fortalecimiento del 
 - **Colaboración:** Equipos de curación, ingestión y preservación digital RIDUNaM.  
 - **Año:** 2025  
 
----
-
 ## Licencia
 
 Este proyecto está licenciado bajo la [GNU General Public License v3.0](LICENSE).  
@@ -54,10 +44,8 @@ Usted es libre de usar, modificar y distribuir este software bajo las condicione
 
 © 2025 **Milva Cantoni** – Proyecto RIDUNaM · Universidad Nacional de Misiones (UNaM)
 
----
 
 ## Contacto
-
 📧 **ridunam@unam.edu.ar**  
 🌐 [https://rid.unam.edu.ar](https://rid.unam.edu.ar)
 
