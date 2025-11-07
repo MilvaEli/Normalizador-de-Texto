@@ -230,6 +230,7 @@ function normalizarLineaFiliacion(linea){
       const src=document.getElementById('entrada').value;
       const lineas=src.split(/\r?\n/);
       const out=[], errs=[];
+      }
       lineas.forEach((l,i)=>{
         if(!l.trim()) return;
         const r=normalizarLineaFiliacion(l);
