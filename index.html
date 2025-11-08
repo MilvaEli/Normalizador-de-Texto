@@ -24,12 +24,13 @@
       background:var(--gris-fondo);
       margin:0; padding:0 1rem 4rem;
       color:var(--texto-principal);
-      background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.04) 0, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 30px),
-                        repeating-linear-gradient(-45deg, rgba(0,0,0,0.04) 0, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 30px);
+      /* patrón suave + watermark */
+      background-image:
+        repeating-linear-gradient(45deg, rgba(0,0,0,0.04) 0, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 30px),
+        repeating-linear-gradient(-45deg, rgba(0,0,0,0.04) 0, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 30px);
       background-size: 60px 60px;
       position: relative;
     }
-
     body::before{
       content: 'EN PROCESO...  LO ESTAMOS VIENDO...';
       position: fixed;
@@ -69,7 +70,6 @@
       border:1px solid var(--borde-suave); resize:vertical; font-family:'Open Sans',monospace; background:#fcf9f9; color:#000;
       position: relative; z-index: 1;
     }
-
     textarea[readonly]{background:#f1f1f1}
 
     .actions{display:flex; flex-wrap:wrap; gap:.5rem; margin:1rem 0 1rem; position: relative; z-index: 1;}
@@ -120,6 +120,7 @@
       <div class="help">Solo habrá un cuadro de entrada y uno de salida. Elegí una acción abajo.</div>
     </section>
 
+    <!-- Botones de acciones -->
     <section class="actions" aria-label="Acciones de normalización">
       <button class="primary" onclick="normalizarTexto()" aria-label="Normalizar texto">Normalizar texto</button>
       <button class="secondary" onclick="invertirAutores()" aria-label="Invertir autores a Apellido, Nombre">Apellido, Nombre</button>
@@ -145,5 +146,163 @@
   </main>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // ————— util UI —————
+    function toast(msg){
+      const t=document.getElementById('toast');
+      t.textContent=msg; t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'), 2200);
+    }
+    function setAviso(html){ document.getElementById('avisos').innerHTML = html || ''; }
+    function setSalida(txt){ document.getElementById('salida').value = txt; }
+
+    // ————— acciones base (entrada → salida) —————
+    function normalizarTexto(){
+      // Normaliza espacios por línea y compacta líneas vacías múltiples
+      const src = document.getElementById('entrada').value;
+      const lineas = src.replace(/\r\n?/g,'\n').split('\n');
+      const limpias = lineas
+        .map(l => l.replace(/\s+/g,' ').trim()) // colapsa espacios por línea
+        .filter((l,i,arr) => !(l==='' && arr[i-1]==='')); // evita líneas vacías consecutivas
+      const out = limpias.join('\n').trim();
+      setSalida(out); setAviso(''); toast('Texto normalizado');
+      habilitarCopiarDescargar(true);
+    }
+
+    function invertirAutores(){
+      let texto=document.getElementById('entrada').value;
+      const autores = texto.split(/\n|;/).map(n=>{
+        n=n.trim(); if(!n) return '';
+        const p=n.split(/\s+/); if(p.length<2) return n;
+        const ape=p.pop(), nom=p.join(' ');
+        return `${ape}, ${nom}`;
+      });
+      setSalida(autores.join('\n')); setAviso(''); toast('Autores invertidos');
+      habilitarCopiarDescargar(true);
+    }
+
+    function toggleLockResultado() {
+      const locked = document.getElementById('lockResultado').checked;
+      const t = document.getElementById('salida');
+      t.readOnly = locked;
+      toast(locked ? 'Resultado bloqueado' : 'Resultado editable');
+    }
+
+    function convertirMinusculas(){
+      setSalida(document.getElementById('entrada').value.toLowerCase());
+      setAviso(''); toast('a minúsculas'); habilitarCopiarDescargar(true);
+    }
+    function convertirMayusculas(){
+      setSalida(document.getElementById('entrada').value.toUpperCase());
+      setAviso(''); toast('A MAYÚSCULAS'); habilitarCopiarDescargar(true);
+    }
+
+    // ————— Normalizador de Filiación SNRD (usa entrada → salida) —————
+    const PARTICULAS=new Set(['de','da','do','das','dos','del','la','las','los','y']);
+    function smartCaseToken(tok,isStart=false){
+      const clean=tok.replace(/[.,;:]/g,'');
+      if (clean.length>=3 && clean===clean.toUpperCase() && /[A-ZÁÉÍÓÚÜÑ]/.test(clean)) return tok.toUpperCase();
+      if (!isStart && PARTICULAS.has(clean.toLowerCase())) return tok.toLowerCase();
+      return tok.charAt(0).toUpperCase()+tok.slice(1).toLowerCase();
+    }
+    function titleCaseSiglas(s){
+      const tk=s.trim().replace(/\s+/g,' ').split(' ');
+      return tk.map((t,i)=>smartCaseToken(t,i===0)).join(' ');
+    }
+
+    function normalizarLineaFiliacion(linea){
+      if(!linea || !linea.trim()) return '';
+
+      // Limpieza mínima y extracción de "Fil:"
+      let txt = linea.trim();
+      if(!/^Fil:\s*/i.test(txt)) txt = 'Fil: ' + txt.replace(/^Fil\s*:\s*/i,'');
+      txt = txt.replace(/^Fil:\s*/i,'');
+
+      // Captura "Apellido, Nombre"
+      const m = txt.match(/^\s*([^.;]+?),\s*([^.;]+?)(?:\.|\s|$)/);
+      if(!m) return { error:'Falta “Apellido, Nombre” (con coma).', salida:null };
+
+      const apellido = titleCaseSiglas(m[1]);
+      const nombre   = titleCaseSiglas(m[2]);
+
+      // Resto: instituciones (separadas por ".") + "; País"
+      let resto = txt.slice(m[0].length).trim();
+
+      // País: después del ÚLTIMO ';'
+      const idx = resto.lastIndexOf(';');
+      if (idx === -1) return { error:'Falta “; País”.', salida:null };
+
+      let institucionesRaw = resto.slice(0, idx).trim();           // todo antes del ";"
+      let pais             = resto.slice(idx+1).trim().replace(/\.*$/,'');
+
+      // Partir en todas las dependencias separadas por punto
+      const instituciones = institucionesRaw
+          .split('.')
+          .map(s => s.trim())
+          .filter(Boolean);
+
+      if (instituciones.length < 1) {
+        return { error:'Debe haber al menos una institución antes del “; País”.', salida:null };
+      }
+
+      // Normalizar “Title Case”/siglas en CADA dependencia
+      const instOut = instituciones.map(s => titleCaseSiglas(s)).join('. ');
+
+      // Ensamblado final:
+      const outPais = titleCaseSiglas(pais);
+      const salida  = `Fil: ${apellido}, ${nombre}. ${instOut}; ${outPais}.`
+        .replace(/\s+/g,' ')
+        .replace(/\s+\./g,'.')
+        .trim();
+
+      // Validación flexible (acepta múltiples dependencias con puntos)
+      const rx = /^Fil:\s*[^,]+,\s*[^.]+\.\s*[^;]+;\s*[^.]+\.$/;
+      if (!rx.test(salida)) {
+        // avisamos pero devolvemos
+        return { error:'Formato fuera de patrón esperado (revísalo).', salida };
+      }
+      return { error:null, salida };
+    }
+
+    function normalizarFiliacionDesdeEntrada(){
+      const src=document.getElementById('entrada').value;
+      const lineas=src.split(/\r?\n/);
+      const out=[], errs=[];
+      lineas.forEach((l,i)=>{
+        if(!l.trim()) return;
+        const r=normalizarLineaFiliacion(l);
+        if(r.error) errs.push(`Línea ${i+1}: ${r.error}`);
+        if(r.salida) out.push(r.salida);
+      });
+      setSalida(out.join('\n'));
+      setAviso(errs.length ? ('⚠️ '+errs.join('<br>')) : '✅ Filiaciones válidas');
+      toast(errs.length ? 'Revisar avisos' : 'Filiación normalizada');
+
+      // Política RIDUNaM: deshabilitar copia/descarga unos segundos para forzar lectura.
+      habilitarCopiarDescargar(false);
+      setTimeout(()=>habilitarCopiarDescargar(true), 10000); // 10s
+    }
+
+    // ————— Copiar / Descargar —————
+    async function copiarSalida(){
+      const t=document.getElementById('salida').value;
+      try{
+        if(navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(t); }
+        else{ const el=document.getElementById('salida'); el.select(); document.execCommand('copy'); }
+        toast('Resultado copiado');
+      }catch(e){ toast('No se pudo copiar'); }
+    }
+    function descargarSalida(){
+      const t=document.getElementById('salida').value;
+      const blob=new Blob([t],{type:'text/plain'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+      a.download='metadatos_normalizados.txt'; a.click(); toast('Archivo descargado');
+    }
+    function habilitarCopiarDescargar(enable){
+      document.getElementById('btnCopiar').disabled=!enable;
+      document.getElementById('btnDescargar').disabled=!enable;
+    }
+  </script>
 </body>
 </html>
