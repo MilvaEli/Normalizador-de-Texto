@@ -157,31 +157,57 @@
     function setAviso(html){ document.getElementById('avisos').innerHTML = html || ''; }
     function setSalida(txt){ document.getElementById('salida').value = txt; }
 
-    // ————— acciones base (entrada → salida) —————
-    // Normalizar: elimina espacios dobles y convierte saltos de línea en punto aparte.
-    function normalizarTexto(){
-      const src = document.getElementById('entrada').value;
+function normalizarTexto() {
+  let src = document.getElementById("entrada").value;
 
-      // Partimos por líneas, limpiamos espacios y quitamos puntos finales para no duplicar
-      const lineas = src
-        .replace(/\r\n?/g,'\n')
-        .split('\n')
-        .map(l => l.replace(/\s+/g,' ').trim().replace(/[.]+$/,''))
-        .filter(l => l !== '');
+  // 1) Pasar todo a saltos de línea uniformes
+  src = src.replace(/\r\n?/g, "\n");
 
-      let out = lineas.join('. ');
+  // 2) Dividir por líneas
+  let lineas = src.split("\n");
 
-      // Seguridad extra: colapsar espacios múltiples
-      out = out.replace(/\s{2,}/g,' ').trim();
+  let resultado = [];
+  let buffer = ""; // línea en construcción
 
-      // Asegurar un punto final
-      if (out && !/[.!?]$/.test(out)) out += '.';
+  for (let i = 0; i < lineas.length; i++) {
+    let linea = lineas[i].trim();
 
-      setSalida(out);
-      setAviso('');
-      toast('Texto normalizado (saltos de línea → punto aparte)');
-      habilitarCopiarDescargar(true);
+    // 3) Línea vacía → se descarta (como en SEDICI)
+    if (linea === "") continue;
+
+    // 4) Reducir espacios múltiples a uno
+    linea = linea.replace(/\s+/g, " ");
+
+    // 5) Si termina en punto = es un punto aparte REAL
+    if (/\.$/.test(linea)) {
+      // Si había texto acumulado, agregarlo
+      if (buffer !== "") {
+        resultado.push(buffer.trim());
+        buffer = "";
+      }
+      // Esta línea es un párrafo cerrado
+      resultado.push(linea);
+    } else {
+      // 6) Si NO termina en punto → se une con la siguiente línea
+      buffer += (buffer === "" ? linea : " " + linea);
     }
+  }
+
+  // 7) Si el buffer quedó con texto sin punto final → agregárselo
+  if (buffer !== "") {
+    if (!buffer.endsWith(".")) buffer += ".";
+    resultado.push(buffer.trim());
+  }
+
+  // 8) Unir con salto de línea entre párrafos
+  const out = resultado.join("\n");
+
+  setSalida(out);
+  setAviso("");
+  toast("Texto normalizado estilo SEDICI");
+  habilitarCopiarDescargar(true);
+}
+
 
     // Puntos aparte: a partir de un bloque de texto, separa cada punto aparte en un renglón.
     function puntosAparte(){
