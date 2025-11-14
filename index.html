@@ -122,7 +122,8 @@
 
     <!-- Botones de acciones -->
     <section class="actions" aria-label="Acciones de normalización">
-      <button class="primary" onclick="normalizarTexto()" aria-label="Normalizar texto">Normalizar texto</button>
+      <button class="primary" onclick="normalizarTexto()" aria-label="Normalizar texto (eliminar espacios dobles y convertir saltos de línea en punto aparte)">Normalizar texto</button>
+      <button class="secondary" onclick="puntosAparte()" aria-label="Separar por puntos aparte">Puntos aparte</button>
       <button class="secondary" onclick="invertirAutores()" aria-label="Invertir autores a Apellido, Nombre">Apellido, Nombre</button>
       <button class="secondary" onclick="normalizarFiliacionDesdeEntrada()" aria-label="Normalizar filiación">Filiación</button>
       <button class="secondary" onclick="convertirMinusculas()" aria-label="Convertir a minúsculas">a minúsculas</button>
@@ -141,7 +142,7 @@
           Bloquear edición
         </span>
       </label>
-      <textarea id="salida" placeholder="Acá vas a ver el resultado procesado..." aria-label="Resultado" readonly></textarea>
+      <textarea id="salida" placeholder="Acá vas a ver el resultado procesado..." aria-label="Resultado"></textarea>
     </section>
   </main>
 
@@ -158,15 +159,52 @@
     function setSalida(txt){ document.getElementById('salida').value = txt; }
 
     // ————— acciones base (entrada → salida) —————
+    // Normalizar: elimina espacios dobles y convierte saltos de línea en punto aparte.
     function normalizarTexto(){
-      // Normaliza espacios por línea y compacta líneas vacías múltiples
       const src = document.getElementById('entrada').value;
-      const lineas = src.replace(/\r\n?/g,'\n').split('\n');
-      const limpias = lineas
-        .map(l => l.replace(/\s+/g,' ').trim()) // colapsa espacios por línea
-        .filter((l,i,arr) => !(l==='' && arr[i-1]==='')); // evita líneas vacías consecutivas
-      const out = limpias.join('\n').trim();
-      setSalida(out); setAviso(''); toast('Texto normalizado');
+
+      // Partimos por líneas, limpiamos espacios y quitamos puntos finales para no duplicar
+      const lineas = src
+        .replace(/\r\n?/g,'\n')
+        .split('\n')
+        .map(l => l.replace(/\s+/g,' ').trim().replace(/[.]+$/,''))
+        .filter(l => l !== '');
+
+      let out = lineas.join('. ');
+
+      // Seguridad extra: colapsar espacios múltiples
+      out = out.replace(/\s{2,}/g,' ').trim();
+
+      // Asegurar un punto final
+      if (out && !/[.!?]$/.test(out)) out += '.';
+
+      setSalida(out);
+      setAviso('');
+      toast('Texto normalizado (saltos de línea → punto aparte)');
+      habilitarCopiarDescargar(true);
+    }
+
+    // Puntos aparte: a partir de un bloque de texto, separa cada punto aparte en un renglón.
+    function puntosAparte(){
+      let txt = document.getElementById('entrada').value;
+
+      // Limpiar espacios múltiples
+      txt = txt.replace(/\s+/g,' ').trim();
+
+      if (!txt){
+        setSalida('');
+        setAviso('No hay texto para procesar.');
+        toast('Sin contenido');
+        habilitarCopiarDescargar(false);
+        return;
+      }
+
+      // Cada punto seguido de espacios pasa a punto + salto de línea
+      const out = txt.replace(/\.\s*/g, ".\n").trim();
+
+      setSalida(out);
+      setAviso('');
+      toast('Texto separado por puntos aparte');
       habilitarCopiarDescargar(true);
     }
 
