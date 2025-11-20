@@ -157,57 +157,56 @@
     function setAviso(html){ document.getElementById('avisos').innerHTML = html || ''; }
     function setSalida(txt){ document.getElementById('salida').value = txt; }
 
-function normalizarTexto() {
-  let src = document.getElementById("entrada").value;
+    function normalizarTexto() {
+      let src = document.getElementById("entrada").value;
 
-  // 1) Pasar todo a saltos de línea uniformes
-  src = src.replace(/\r\n?/g, "\n");
+      // 1) Pasar todo a saltos de línea uniformes
+      src = src.replace(/\r\n?/g, "\n");
 
-  // 2) Dividir por líneas
-  let lineas = src.split("\n");
+      // 2) Dividir por líneas
+      let lineas = src.split("\n");
 
-  let resultado = [];
-  let buffer = ""; // línea en construcción
+      let resultado = [];
+      let buffer = ""; // línea en construcción
 
-  for (let i = 0; i < lineas.length; i++) {
-    let linea = lineas[i].trim();
+      for (let i = 0; i < lineas.length; i++) {
+        let linea = lineas[i].trim();
 
-    // 3) Línea vacía → se descarta (como en SEDICI)
-    if (linea === "") continue;
+        // 3) Línea vacía → se descarta (como en SEDICI)
+        if (linea === "") continue;
 
-    // 4) Reducir espacios múltiples a uno
-    linea = linea.replace(/\s+/g, " ");
+        // 4) Reducir espacios múltiples a uno
+        linea = linea.replace(/\s+/g, " ");
 
-    // 5) Si termina en punto = es un punto aparte REAL
-    if (/\.$/.test(linea)) {
-      // Si había texto acumulado, agregarlo
-      if (buffer !== "") {
-        resultado.push(buffer.trim());
-        buffer = "";
+        // 5) Si termina en punto = es un punto aparte REAL
+        if (/\.$/.test(linea)) {
+          // Si había texto acumulado, agregarlo
+          if (buffer !== "") {
+            resultado.push(buffer.trim());
+            buffer = "";
+          }
+          // Esta línea es un párrafo cerrado
+          resultado.push(linea);
+        } else {
+          // 6) Si NO termina en punto → se une con la siguiente línea
+          buffer += (buffer === "" ? linea : " " + linea);
+        }
       }
-      // Esta línea es un párrafo cerrado
-      resultado.push(linea);
-    } else {
-      // 6) Si NO termina en punto → se une con la siguiente línea
-      buffer += (buffer === "" ? linea : " " + linea);
+
+      // 7) Si el buffer quedó con texto sin punto final → agregárselo
+      if (buffer !== "") {
+        if (!buffer.endsWith(".")) buffer += ".";
+        resultado.push(buffer.trim());
+      }
+
+      // 8) Unir con salto de línea entre párrafos
+      const out = resultado.join("\n");
+
+      setSalida(out);
+      setAviso("");
+      toast("Texto normalizado estilo SEDICI");
+      habilitarCopiarDescargar(true);
     }
-  }
-
-  // 7) Si el buffer quedó con texto sin punto final → agregárselo
-  if (buffer !== "") {
-    if (!buffer.endsWith(".")) buffer += ".";
-    resultado.push(buffer.trim());
-  }
-
-  // 8) Unir con salto de línea entre párrafos
-  const out = resultado.join("\n");
-
-  setSalida(out);
-  setAviso("");
-  toast("Texto normalizado estilo SEDICI");
-  habilitarCopiarDescargar(true);
-}
-
 
     // Puntos aparte: a partir de un bloque de texto, separa cada punto aparte en un renglón.
     function puntosAparte(){
@@ -263,15 +262,35 @@ function normalizarTexto() {
 
     // ————— Normalizador de Filiación SNRD (usa entrada → salida) —————
     const PARTICULAS=new Set(['de','da','do','das','dos','del','la','las','los','y']);
+
     function smartCaseToken(tok,isStart=false){
       const clean=tok.replace(/[.,;:]/g,'');
       if (clean.length>=3 && clean===clean.toUpperCase() && /[A-ZÁÉÍÓÚÜÑ]/.test(clean)) return tok.toUpperCase();
       if (!isStart && PARTICULAS.has(clean.toLowerCase())) return tok.toLowerCase();
       return tok.charAt(0).toUpperCase()+tok.slice(1).toLowerCase();
     }
+
     function titleCaseSiglas(s){
       const tk=s.trim().replace(/\s+/g,' ').split(' ');
       return tk.map((t,i)=>smartCaseToken(t,i===0)).join(' ');
+    }
+
+    // 🔹 Palabras que exigen punto antes (varios idiomas)
+    const CLAVES_PUNTO = [
+      'facultad','faculdade','faculty','faculté',
+      'departamento','department','departament','dipartimento',
+      'instituto','institute','institut'
+    ];
+
+    // Inserta ". " antes de las palabras clave si no hay punto todavía
+    function asegurarPuntoAntesKeywords(texto){
+      CLAVES_PUNTO.forEach(kw => {
+        const re = new RegExp(`([^.;,])\\s+(${kw})\\b`, 'gi');
+        texto = texto.replace(re, (match, antes, palabra) => {
+          return `${antes}. ${palabra}`;
+        });
+      });
+      return texto;
     }
 
     function normalizarLineaFiliacion(linea){
@@ -298,6 +317,9 @@ function normalizarTexto() {
 
       let institucionesRaw = resto.slice(0, idx).trim();           // todo antes del ";"
       let pais             = resto.slice(idx+1).trim().replace(/\.*$/,'');
+
+      // 🔹 Asegurar punto antes de Facultad/Departamento/Instituto (& variantes)
+      institucionesRaw = asegurarPuntoAntesKeywords(institucionesRaw);
 
       // Partir en todas las dependencias separadas por punto
       const instituciones = institucionesRaw
